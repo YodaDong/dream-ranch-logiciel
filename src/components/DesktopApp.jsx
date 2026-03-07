@@ -44,7 +44,7 @@ export default function DesktopApp({ctx}){
   return(
     <div style={D.wrap}>
       <aside style={D.side}>
-        <div style={D.logo}><img src="/logo.svg" alt="Dream Ranch" style={{width:32,height:32}}/><span style={D.logoT}>Dream Ranch</span></div>
+        <div style={D.logo}><div style={{width:36,height:36,borderRadius:"50%",background:"white",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><img src="/logo.svg" alt="Dream Ranch" style={{width:28,height:28}}/></div><span style={D.logoT}>Dream Ranch</span></div>
         {navItems.map(it=>(
           <button key={it.id} onClick={()=>{setTab(it.id);setSelC(null);setSelV(null);}} style={{...D.navIt,color:tab===it.id||(!navItems.find(n=>n.id===tab)&&it.id==="dashboard")?"#d4af69":"#7a6f60",background:tab===it.id?"rgba(212,175,105,.06)":"transparent"}} className="bh">
             <Ico n={it.icon} s={18} c={tab===it.id?"#d4af69":"#7a6f60"}/>{it.label}
