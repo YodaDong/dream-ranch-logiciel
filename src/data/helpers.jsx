@@ -17,7 +17,8 @@ export const Fld=({l,v,o,t="text",af,ph=""})=><div style={{marginBottom:12}}><la
 export const CSS_GLOBAL=`
 @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600;700&display=swap');
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{margin:0;background:#12100c}
+html,body{margin:0;background:#12100c;height:100%;overflow-y:scroll;-webkit-overflow-scrolling:touch;overscroll-behavior-y:none}
+#root{min-height:100%;overflow-y:auto}
 input::placeholder{color:#5a5040}
 .bh{transition:transform .1s}.bh:active{transform:scale(.97);opacity:.85}
 .rh:hover{background:rgba(212,175,105,.06)!important}
