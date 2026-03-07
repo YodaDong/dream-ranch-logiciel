@@ -92,7 +92,7 @@ export default function App() {
       return [...prev, { id: `pr-${uid()}`, cr, date: dt, cav, ok: true }];
     });
   };
-  const addHM = (cav, delta, motif) => { setHm(prev => [...prev, { id: `hm-${uid()}`, cav, delta, motif, date: td() }]); flash(delta > 0 ? `+${delta}h ajoutée(s)` : `${delta}h retirée(s)`); };
+  const addHM = (cav, delta, motif, date) => { setHm(prev => [...prev, { id: `hm-${uid()}`, cav, delta, motif, date: date || td() }]); flash(delta > 0 ? `+${delta}h ajoutée(s)` : `${delta}h retirée(s)`); };
   const addCatItem = (d) => { setCat(prev => [...prev, { id: `p-${uid()}`, ...d, actif: true }]); flash("Prestation ajoutée"); };
   const updCatItem = (id, d) => { setCat(prev => prev.map(p => p.id === id ? { ...p, ...d } : p)); flash("Prestation modifiée"); };
   const delCatItem = (id) => { setCat(prev => prev.map(p => p.id === id ? { ...p, actif: false } : p)); flash("Prestation désactivée"); };
