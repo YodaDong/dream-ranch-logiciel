@@ -1,0 +1,244 @@
+import { useState, useMemo } from "react";
+import { JOURS, MODES_REGLEMENT } from "../data/mockData.jsx";
+import { uid, td, fD, fE, Ico, IR, Fld, CAT_COLORS, STATUT_COLORS } from "../data/helpers.jsx";
+import { Modals } from "./Modals";
+
+const S={
+  root:{maxWidth:520,margin:"0 auto",position:"relative",paddingBottom:72,paddingTop:56},
+  hdr:{position:"fixed",top:0,left:0,right:0,zIndex:100,background:"rgba(18,16,12,.92)",backdropFilter:"blur(12px)",borderBottom:"1px solid rgba(212,175,105,.08)"},
+  hdrIn:{display:"flex",alignItems:"center",gap:10,padding:"12px 16px",maxWidth:520,margin:"0 auto"},
+  hdrT:{fontFamily:"'DM Serif Display',serif",fontSize:18,fontWeight:400,color:"#d4af69",margin:0,flex:1,textAlign:"center"},
+  hdrBtn:{background:"none",border:"none",color:"#d4af69",cursor:"pointer",padding:8,borderRadius:8},
+  nav:{position:"fixed",bottom:0,left:0,right:0,zIndex:100,background:"rgba(18,16,12,.95)",backdropFilter:"blur(12px)",borderTop:"1px solid rgba(212,175,105,.08)",display:"flex",justifyContent:"space-around",padding:"6px 0 8px",maxWidth:520,margin:"0 auto"},
+  navIt:{display:"flex",flexDirection:"column",alignItems:"center",gap:2,background:"none",border:"none",cursor:"pointer",padding:"6px 12px",fontFamily:"inherit"},
+  card:{background:"rgba(212,175,105,.03)",border:"1px solid rgba(212,175,105,.08)",borderRadius:14,padding:16,marginBottom:12},
+  secT:{fontFamily:"'DM Serif Display',serif",fontSize:16,color:"#d4af69",fontWeight:400,marginBottom:4},
+  lRow:{display:"flex",alignItems:"center",gap:10,padding:"10px 4px",width:"100%",border:"none",borderBottom:"1px solid rgba(212,175,105,.05)",background:"transparent",cursor:"pointer",textAlign:"left",fontFamily:"inherit"},
+  rT:{fontWeight:600,color:"#e8dcc8",fontSize:13},rS:{color:"#7a6f60",fontSize:11,marginTop:1},
+  av:{width:36,height:36,borderRadius:"50%",background:"rgba(212,175,105,.08)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0},
+  bAv:{width:52,height:52,borderRadius:"50%",background:"rgba(212,175,105,.1)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0},
+  tBdg:{display:"inline-block",background:"rgba(212,175,105,.1)",color:"#d4af69",fontSize:10,padding:"2px 10px",borderRadius:20,fontWeight:600},
+  pill:{display:"inline-block",fontSize:10,padding:"2px 8px",borderRadius:6,fontWeight:600,whiteSpace:"nowrap"},
+  cPill:{display:"inline-block",fontSize:10,padding:"3px 10px",borderRadius:6,fontWeight:600},
+  sBdg:{fontSize:11,color:"#e87a7a",fontWeight:600,whiteSpace:"nowrap",background:"rgba(232,122,122,.1)",padding:"2px 8px",borderRadius:6},
+  mBdg:{background:"rgba(212,175,105,.08)",color:"#d4af69",fontSize:11,padding:"4px 10px",borderRadius:6,fontWeight:600},
+  stBx:{background:"rgba(212,175,105,.04)",border:"1px solid rgba(212,175,105,.08)",borderRadius:12,padding:14,textAlign:"center"},
+  stLb:{fontSize:11,color:"#7a6f60",marginBottom:4,textTransform:"uppercase",letterSpacing:.5,fontWeight:600},
+  stVl:{fontSize:22,fontWeight:700},
+  mSt:{background:"rgba(212,175,105,.05)",borderRadius:10,padding:10,textAlign:"center"},
+  mLb:{fontSize:10,color:"#7a6f60",marginBottom:3,textTransform:"uppercase",letterSpacing:.4,fontWeight:600},
+  mVl:{fontSize:16,fontWeight:700,color:"#e8dcc8"},
+  fNm:{fontFamily:"'DM Serif Display',serif",fontSize:20,color:"#d4af69",margin:0,fontWeight:400},
+  aBtn:{display:"inline-flex",alignItems:"center",gap:4,background:"#d4af69",color:"#1a1207",border:"none",borderRadius:8,padding:"7px 12px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap"},
+  iBtn:{background:"rgba(212,175,105,.08)",border:"1px solid rgba(212,175,105,.12)",borderRadius:8,padding:8,cursor:"pointer"},
+  srchW:{display:"flex",alignItems:"center",background:"rgba(212,175,105,.06)",border:"1px solid rgba(212,175,105,.12)",borderRadius:12,padding:"0 14px",gap:10},
+  srchI:{flex:1,background:"transparent",border:"none",color:"#e8dcc8",fontSize:15,padding:"13px 0",outline:"none",fontFamily:"inherit"},
+  clrB:{background:"none",border:"none",color:"#7a6f60",cursor:"pointer",padding:4},
+  famC:{background:"rgba(212,175,105,.06)",border:"1px solid rgba(212,175,105,.12)",borderRadius:20,padding:"6px 14px",color:"#e8dcc8",fontSize:12,cursor:"pointer",fontFamily:"inherit"},
+  qGrid:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,margin:"18px 0 14px"},
+  qBtn:{display:"flex",flexDirection:"column",alignItems:"center",gap:8,padding:"18px 12px",background:"rgba(212,175,105,.04)",border:"1px solid rgba(212,175,105,.1)",borderRadius:14,cursor:"pointer",fontFamily:"inherit",color:"#b8a88a",fontSize:12,fontWeight:500},
+  qIco:{width:44,height:44,borderRadius:"50%",background:"rgba(212,175,105,.08)",display:"flex",alignItems:"center",justifyContent:"center"},
+  mt:{textAlign:"center",color:"#5a5040",padding:20,fontSize:13},
+  resList:{marginTop:8,background:"rgba(212,175,105,.03)",borderRadius:12,border:"1px solid rgba(212,175,105,.08)",overflow:"hidden"},
+  jPill:{border:"none",borderRadius:10,padding:"8px 14px",fontSize:13,cursor:"pointer",fontFamily:"inherit",fontWeight:600,whiteSpace:"nowrap"},
+  cavC:{background:"rgba(212,175,105,.06)",borderRadius:8,padding:"4px 10px",fontSize:12,color:"#b8a88a",cursor:"pointer"},
+  th:{fontSize:10,color:"#7a6f60",fontWeight:600,textTransform:"uppercase",letterSpacing:.4},
+  fPill:{border:"none",borderRadius:20,padding:"6px 14px",fontSize:12,cursor:"pointer",fontFamily:"inherit",fontWeight:600},
+};
+
+export default function MobileApp({ctx}){
+  const{tab,setTab,selC,setSelC,selV,setSelV,mdl,setMdl}=ctx;
+  const goHome=()=>{setTab("home");setSelC(null);setSelV(null);};
+  const titles={home:"Dream Ranch",fiche:"Fiche cavalier",vd:"Détail vente",clients:"Clients",heures:"Heures de cours",planning:"Planning"};
+
+  return(
+    <div style={S.root}>
+      <header style={S.hdr}><div style={S.hdrIn}>
+        {tab!=="home"?<button onClick={()=>{if(tab==="vd")setTab("fiche");else goHome();}} style={S.hdrBtn} className="bh"><Ico n="back" s={18}/></button>:<span style={{fontSize:22}}>🐴</span>}
+        <h1 style={S.hdrT}>{titles[tab]}</h1><div style={{width:36}}/>
+      </div></header>
+
+      <div style={{padding:"12px 0 0"}}>
+        {tab==="home"&&<Home ctx={ctx} S={S}/>}
+        {tab==="fiche"&&<Fiche ctx={ctx} S={S}/>}
+        {tab==="vd"&&<VDetail ctx={ctx} S={S}/>}
+        {tab==="clients"&&<Clients ctx={ctx} S={S}/>}
+        {tab==="heures"&&<Heures ctx={ctx} S={S}/>}
+        {tab==="planning"&&<Planning ctx={ctx} S={S}/>}
+      </div>
+
+      <nav style={S.nav}>
+        {[["home","home","Accueil"],["clients","users","Clients"],["heures","clock","Heures"],["planning","cal","Planning"]].map(([id,ic,lb])=>{
+          const act=tab===id||(id==="home"&&(tab==="fiche"||tab==="vd"));
+          return<button key={id} onClick={()=>{setTab(id);setSelC(null);setSelV(null);}} style={{...S.navIt,color:act?"#d4af69":"#6a5f50"}} className="bh"><Ico n={ic} s={20} c={act?"#d4af69":"#6a5f50"}/><span style={{fontSize:10}}>{lb}</span></button>;
+        })}
+      </nav>
+
+      {mdl&&<Modals ctx={ctx}/>}
+    </div>
+  );
+}
+
+// ── HOME ──
+
+function Home({ctx,S}){
+  const[q,setQ]=useState("");
+  const res=useMemo(()=>{if(q.length<2)return[];const w=q.toLowerCase().split(/\s+/);return ctx.cls.filter(c=>{const f=`${c.nom} ${c.prenom}`.toLowerCase();return w.every(z=>f.includes(z));}).slice(0,8);},[q,ctx.cls]);
+  return<div style={{padding:"0 16px"}}>
+    <div style={{textAlign:"center",padding:"20px 0 14px"}}><div style={{fontSize:34,marginBottom:2}}>🐴</div><h2 style={{fontFamily:"'DM Serif Display',serif",fontSize:26,color:"#d4af69",margin:0,fontWeight:400}}>Dream Ranch</h2><p style={{color:"#7a6f60",fontSize:13,marginTop:3}}>Gestion du centre équestre</p></div>
+    <div style={S.srchW}><Ico n="srch" s={16} c="#7a6f60"/><input placeholder="Rechercher un cavalier..." value={q} onChange={e=>setQ(e.target.value)} style={S.srchI} autoComplete="off"/>{q&&<button onClick={()=>setQ("")} style={S.clrB} className="bh"><Ico n="x" s={14} c="#7a6f60"/></button>}</div>
+    {res.length>0&&<div style={S.resList}>{res.map(c=>{const s=ctx.cs(c.id);return<button key={c.id} onClick={()=>{ctx.setSelC(c.id);ctx.setTab("fiche");}} style={{...S.lRow,padding:"10px 14px"}} className="bh rh"><div style={S.av}>{c.type==="Enfant"?"👧":"👤"}</div><div style={{flex:1,minWidth:0}}><div style={S.rT}>{c.nom} {c.prenom}</div><div style={S.rS}>{c.type}{c.type==="Enfant"&&c.parentId?` · enfant de ${ctx.gc(c.parentId)?.prenom}`:""}</div></div>{s>0&&<span style={S.sBdg}>{fE(s)}</span>}<Ico n="chev" s={14} c="#6a5f50"/></button>})}</div>}
+    {q.length>=2&&res.length===0&&<p style={S.mt}>Aucun résultat</p>}
+    <div style={S.qGrid}>
+      <button onClick={()=>ctx.setMdl({t:"nc"})} style={S.qBtn} className="bh"><div style={S.qIco}><Ico n="plus" s={20} c="#d4af69"/></div>Nouveau client</button>
+      <button onClick={()=>ctx.setTab("planning")} style={S.qBtn} className="bh"><div style={S.qIco}><Ico n="cal" s={20} c="#d4af69"/></div>Planning</button>
+      <button onClick={()=>ctx.setTab("clients")} style={S.qBtn} className="bh"><div style={S.qIco}><Ico n="users" s={20} c="#d4af69"/></div>Tous les clients</button>
+      <button onClick={()=>ctx.setTab("heures")} style={S.qBtn} className="bh"><div style={S.qIco}><Ico n="clock" s={20} c="#d4af69"/></div>Heures</button>
+    </div>
+    <div style={S.secT}>Dernières ventes</div>
+    <div style={S.card}>{ctx.vts.slice(0,5).map(v=>{const c=ctx.gc(v.cav);const st=STATUT_COLORS[v.st];return<button key={v.id} onClick={()=>{ctx.setSelC(v.cav);ctx.setSelV(v.id);ctx.setTab("vd");}} style={S.lRow} className="bh rh"><div style={{flex:1,minWidth:0}}><div style={S.rT}>{v.detail}</div><div style={S.rS}>{c?.prenom} {c?.nom} · {fD(v.date)}</div></div><div style={{textAlign:"right"}}><div style={{fontWeight:700,color:"#d4af69",fontSize:14}}>{fE(v.du)}</div><span style={{...S.pill,background:st.bg,color:st.fg}}>{st.i} {v.st}</span></div></button>})}</div>
+  </div>;
+}
+
+// ── FICHE ──
+
+function Fiche({ctx,S}){
+  const c=ctx.gc(ctx.selC);if(!c)return<p style={S.mt}>Sélectionnez un cavalier</p>;
+  const isParent=c.type==="Parent";
+  const py=ctx.gp(c.id);const fam=ctx.gf(c.id);const vts=ctx.cv(c.id);const hrs=ctx.ch(c.id);
+  const famData=ctx.csFamille(c.id);
+
+  return<div style={{padding:"0 16px"}}>
+    {/* Identity card */}
+    <div style={S.card}>
+      <div style={{display:"flex",gap:14,alignItems:"center",marginBottom:14}}>
+        <div style={S.bAv}>{c.type==="Enfant"?"👧":"👤"}</div>
+        <div style={{flex:1}}><h2 style={S.fNm}>{c.prenom} {c.nom}</h2><div style={{display:"flex",gap:6,marginTop:4}}><span style={S.tBdg}>{c.type}</span>{c.actif&&<span style={{...S.tBdg,background:"#0f3d2a",color:"#5ae8a0"}}>Actif</span>}</div></div>
+        <button onClick={()=>ctx.setMdl({t:"ec",cid:c.id})} style={S.iBtn} className="bh"><Ico n="edit" s={16} c="#d4af69"/></button>
+      </div>
+      {/* Enfant: only birthday + payeur */}
+      {!isParent && <>
+        {c.naissance&&<IR l="Né(e) le" v={fD(c.naissance)}/>}
+        {py&&<IR l="Payeur" v={`${py.prenom} ${py.nom}`}/>}
+      </>}
+      {/* Parent: full info */}
+      {isParent && <>
+        {c.tel&&<IR l="Tél" v={c.tel}/>}
+        {c.email&&<IR l="Email" v={c.email}/>}
+        {c.naissance&&<IR l="Né(e) le" v={fD(c.naissance)}/>}
+        {c.adresse&&<IR l="Adresse" v={`${c.adresse}, ${c.cp} ${c.ville}`}/>}
+      </>}
+    </div>
+
+    {/* Soldes - Parent shows family detail */}
+    {isParent ? (
+      <div style={S.card}>
+        <div style={S.secT}>Reste à payer — Famille</div>
+        {famData.details.map(d=>(
+          <div key={d.id} style={{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:"1px solid rgba(212,175,105,.04)"}}>
+            <span style={{color:"#b8a88a",fontSize:13}}>{d.nom}</span>
+            <span style={{color:d.solde>0?"#e87a7a":"#5ae8a0",fontWeight:600,fontSize:13}}>{fE(d.solde)}</span>
+          </div>
+        ))}
+        <div style={{display:"flex",justifyContent:"space-between",padding:"10px 0 0",marginTop:4}}>
+          <span style={{color:"#d4af69",fontWeight:700,fontSize:14}}>Total famille</span>
+          <span style={{color:famData.total>0?"#e87a7a":"#5ae8a0",fontWeight:700,fontSize:18}}>{fE(famData.total)}</span>
+        </div>
+      </div>
+    ) : (
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
+        <div style={S.stBx}><div style={S.stLb}>Reste à payer</div><div style={{...S.stVl,color:ctx.cs(c.id)>0?"#e87a7a":"#5ae8a0"}}>{fE(ctx.cs(c.id))}</div></div>
+        <div style={S.stBx}><div style={S.stLb}>Heures restantes</div><div style={{...S.stVl,color:hrs.solde>0?"#7db8e0":"#e87a7a"}}>{hrs.solde}h</div><div style={{fontSize:11,color:"#7a6f60",marginTop:2}}>{hrs.achats}h achetées · {hrs.consommes}h prises</div></div>
+      </div>
+    )}
+
+    {/* Heures for parent */}
+    {isParent && (
+      <div style={{display:"grid",gridTemplateColumns:"1fr",gap:10,marginBottom:12}}>
+        <div style={S.stBx}><div style={S.stLb}>Mes heures</div><div style={{...S.stVl,color:hrs.solde>0?"#7db8e0":"#e87a7a"}}>{hrs.solde}h</div></div>
+      </div>
+    )}
+
+    {/* Famille */}
+    {fam.length>0&&<div style={S.card}><div style={S.secT}>Famille</div><div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:8}}>{fam.map(f=><button key={f.id} onClick={()=>ctx.setSelC(f.id)} style={S.famC} className="bh">{f.type==="Enfant"?"👧":"👤"} {f.prenom}</button>)}</div></div>}
+
+    {/* Ventes */}
+    <div style={S.card}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+        <div style={S.secT}>Ventes</div>
+        <div style={{display:"flex",gap:6}}>
+          <button onClick={()=>ctx.setMdl({t:"dh",cid:c.id})} style={{...S.aBtn,background:"rgba(212,175,105,.15)",color:"#d4af69"}} className="bh"><Ico n="minus" s={14}/> Heures</button>
+          <button onClick={()=>ctx.setMdl({t:"nv",cid:c.id})} style={S.aBtn} className="bh"><Ico n="plus" s={14}/> Vente</button>
+        </div>
+      </div>
+      {vts.length===0&&<p style={S.mt}>Aucune vente</p>}
+      {vts.map(v=>{const st=STATUT_COLORS[v.st];const r=v.du-v.tp;return<button key={v.id} onClick={()=>{ctx.setSelV(v.id);ctx.setTab("vd");}} style={S.lRow} className="bh rh"><div style={{flex:1,minWidth:0}}><div style={S.rT}>{v.detail}</div><div style={S.rS}>{fD(v.date)}{r>0?` · reste ${fE(r)}`:""}</div></div><span style={{...S.pill,background:st.bg,color:st.fg}}>{st.i} {v.st}</span><Ico n="chev" s={14} c="#6a5f50"/></button>})}
+    </div>
+  </div>;
+}
+
+// ── VENTE DETAIL ──
+
+function VDetail({ctx,S}){
+  const v=ctx.vts.find(z=>z.id===ctx.selV);if(!v)return<p style={S.mt}>Vente introuvable</p>;
+  const c=ctx.gc(v.cav),py=ctx.gc(v.pay),pr=ctx.cat.find(z=>z.id===v.prest);
+  const st=STATUT_COLORS[v.st],ct=CAT_COLORS[pr?.cat]||CAT_COLORS.Autre,r=v.du-v.tp;
+  return<div style={{padding:"0 16px"}}>
+    <div style={S.card}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
+        <div><h2 style={S.fNm}>{v.detail}</h2><div style={{display:"flex",gap:6,marginTop:6}}><span style={{...S.cPill,background:ct.bg,color:ct.fg}}>{pr?.cat}</span><span style={{...S.pill,background:st.bg,color:st.fg}}>{st.i} {v.st}</span></div></div>
+        {v.fact&&<span style={{...S.cPill,background:"#1a3d5c",color:"#7db8e0"}}>📄 Facturée</span>}
+      </div>
+      <IR l="Cavalier" v={c?`${c.prenom} ${c.nom}`:""}/><IR l="Payeur" v={py?`${py.prenom} ${py.nom}`:""}/><IR l="Date" v={fD(v.date)}/><IR l="Réf." v={v.ref}/>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginTop:16}}>
+        <div style={S.mSt}><div style={S.mLb}>Montant dû</div><div style={S.mVl}>{fE(v.du)}</div></div>
+        <div style={S.mSt}><div style={S.mLb}>Payé</div><div style={{...S.mVl,color:"#5ae8a0"}}>{fE(v.tp)}</div></div>
+        <div style={S.mSt}><div style={S.mLb}>Reste</div><div style={{...S.mVl,color:r>0?"#e8c44a":"#5ae8a0"}}>{fE(r)}</div></div>
+      </div>
+    </div>
+    <div style={S.card}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}><div style={S.secT}>Paiements</div>{r>0&&<button onClick={()=>ctx.setMdl({t:"np",vid:v.id})} style={S.aBtn} className="bh"><Ico n="plus" s={14}/> Paiement</button>}</div>
+    {v.pays.length===0&&<p style={S.mt}>Aucun paiement</p>}
+    {v.pays.map(p=><div key={p.id} style={S.lRow}><div style={{flex:1}}><div style={S.rT}>{fE(p.mt)}</div><div style={S.rS}>{fD(p.date)}{p.chq?` · Chq n°${p.chq}`:""}</div></div><span style={S.mBdg}>{p.mode}</span></div>)}</div>
+  </div>;
+}
+
+// ── CLIENTS ──
+
+function Clients({ctx,S}){
+  const[q,setQ]=useState("");const[f,setF]=useState("Tous");
+  const lst=useMemo(()=>{let l=ctx.cls;if(f==="Parents")l=l.filter(c=>c.type==="Parent");if(f==="Enfants")l=l.filter(c=>c.type==="Enfant");if(q.length>=2){const w=q.toLowerCase().split(/\s+/);l=l.filter(c=>`${c.nom} ${c.prenom}`.toLowerCase().split("").join("").includes("")&&w.every(z=>`${c.nom} ${c.prenom}`.toLowerCase().includes(z)));}return l.sort((a,b)=>a.nom.localeCompare(b.nom));},[ctx.cls,q,f]);
+  return<div style={{padding:"0 16px"}}>
+    <div style={{display:"flex",gap:8,marginBottom:12}}><div style={{...S.srchW,flex:1}}><Ico n="srch" s={16} c="#7a6f60"/><input placeholder="Rechercher..." value={q} onChange={e=>setQ(e.target.value)} style={S.srchI}/></div><button onClick={()=>ctx.setMdl({t:"nc"})} style={S.aBtn} className="bh"><Ico n="plus" s={16}/></button></div>
+    <div style={{display:"flex",gap:6,marginBottom:12}}>{["Tous","Parents","Enfants"].map(z=><button key={z} onClick={()=>setF(z)} style={{...S.fPill,background:f===z?"#d4af69":"rgba(212,175,105,.08)",color:f===z?"#1a1207":"#7a6f60"}} className="bh">{z}</button>)}<span style={{color:"#7a6f60",fontSize:12,alignSelf:"center",marginLeft:"auto"}}>{lst.length}</span></div>
+    <div style={S.card}>{lst.map(c=>{const s=ctx.cs(c.id);return<button key={c.id} onClick={()=>{ctx.setSelC(c.id);ctx.setTab("fiche");}} style={S.lRow} className="bh rh"><div style={S.av}>{c.type==="Enfant"?"👧":"👤"}</div><div style={{flex:1,minWidth:0}}><div style={S.rT}>{c.nom} {c.prenom}</div><div style={S.rS}>{c.type}{c.tel?` · ${c.tel}`:""}</div></div>{s>0&&<span style={S.sBdg}>{fE(s)}</span>}<Ico n="chev" s={14} c="#6a5f50"/></button>})}</div>
+  </div>;
+}
+
+// ── HEURES ──
+
+function Heures({ctx,S}){
+  const[q,setQ]=useState("");
+  const lst=useMemo(()=>{let l=ctx.cls.filter(c=>{const v=ctx.cv(c.id);return v.some(vt=>{const p=ctx.cat.find(z=>z.id===vt.prest);return p?.h>0;});});if(q.length>=2){const w=q.toLowerCase().split(/\s+/);l=l.filter(c=>w.every(z=>`${c.nom} ${c.prenom}`.toLowerCase().includes(z)));}return l.sort((a,b)=>a.nom.localeCompare(b.nom));},[ctx.cls,ctx.cv,ctx.cat,q]);
+  return<div style={{padding:"0 16px"}}>
+    <div style={S.srchW}><Ico n="srch" s={16} c="#7a6f60"/><input placeholder="Rechercher..." value={q} onChange={e=>setQ(e.target.value)} style={S.srchI}/></div>
+    <div style={{...S.card,marginTop:12}}>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 70px 60px 60px",gap:4,padding:"8px 0",borderBottom:"1px solid rgba(212,175,105,.1)"}}><span style={S.th}>Cavalier</span><span style={{...S.th,textAlign:"center"}}>Achetées</span><span style={{...S.th,textAlign:"center"}}>Prises</span><span style={{...S.th,textAlign:"center"}}>Solde</span></div>
+      {lst.map(c=>{const h=ctx.ch(c.id);return<button key={c.id} onClick={()=>{ctx.setSelC(c.id);ctx.setTab("fiche");}} style={{...S.lRow,display:"grid",gridTemplateColumns:"1fr 70px 60px 60px",gap:4}} className="bh rh"><div style={S.rT}>{c.prenom} {c.nom}</div><div style={{textAlign:"center",color:"#7db8e0",fontWeight:600}}>{h.achats}h</div><div style={{textAlign:"center",color:"#e8c44a",fontWeight:600}}>{h.consommes}h</div><div style={{textAlign:"center",color:h.solde>0?"#5ae8a0":"#e87a7a",fontWeight:700}}>{h.solde}h</div></button>})}
+    </div>
+  </div>;
+}
+
+// ── PLANNING ──
+
+function Planning({ctx,S}){
+  const[j,setJ]=useState("Mercredi");
+  const jc=ctx.crs.filter(cr=>cr.jour===j).sort((a,b)=>a.heure.localeCompare(b.heure));
+  return<div style={{padding:"0 16px"}}>
+    <div style={{display:"flex",gap:4,marginBottom:14,overflowX:"auto",paddingBottom:4}}>{JOURS.map(d=>{const n=ctx.crs.filter(cr=>cr.jour===d).length;return<button key={d} onClick={()=>setJ(d)} style={{...S.jPill,background:j===d?"#d4af69":"rgba(212,175,105,.06)",color:j===d?"#1a1207":"#7a6f60"}} className="bh">{d.slice(0,3)}{n>0&&<span style={{fontSize:10,marginLeft:3,opacity:.7}}>({n})</span>}</button>})}</div>
+    {jc.length===0&&<p style={S.mt}>Aucun créneau le {j.toLowerCase()}</p>}
+    {jc.map(cr=><div key={cr.id} style={S.card}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}><div><span style={{fontWeight:700,color:"#d4af69",fontSize:16}}>{cr.heure}</span><span style={{color:"#b8a88a",marginLeft:8,fontSize:14}}>{cr.nom}</span></div><button onClick={()=>ctx.setMdl({t:"pr",crid:cr.id})} style={S.aBtn} className="bh"><Ico n="chk" s={14}/> Présences</button></div>
+      <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{cr.cavs.map(id=>{const c=ctx.gc(id);return c?<span key={id} style={S.cavC} onClick={()=>{ctx.setSelC(id);ctx.setTab("fiche");}}>{c.prenom} {c.nom}</span>:null})}</div>
+    </div>)}
+  </div>;
+}
