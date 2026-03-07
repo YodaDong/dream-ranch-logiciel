@@ -1,9 +1,9 @@
 import { useState, useMemo, useCallback } from "react";
-import { INIT_CLIENTS, INIT_CATALOGUE, INIT_VENTES, INIT_CRENEAUX, INIT_PRESENCES, INIT_HEURES_MANUELLES, MODES_REGLEMENT } from "./data/mockData.jsx";
+import { INIT_CLIENTS, INIT_CATALOGUE, INIT_VENTES, INIT_CRENEAUX, INIT_PRESENCES, INIT_HEURES_MANUELLES } from "./data/mockData.jsx";
 import { uid, td, fE, CSS_GLOBAL } from "./data/helpers.jsx";
 import { useIsDesktop } from "./hooks/useIsDesktop.jsx";
-import MobileApp from "./components/MobileApp";
-import DesktopApp from "./components/DesktopApp";
+import MobileApp from "./components/MobileApp.jsx";
+import DesktopApp from "./components/DesktopApp.jsx";
 
 export default function App() {
   const isDesktop = useIsDesktop();
@@ -36,31 +36,27 @@ export default function App() {
     return { achats, consommes, manuels, solde: achats - consommes + manuels };
   }, [cv, prs, hm, cat]);
   const cs = useCallback(id => cv(id).reduce((s, v) => s + (v.du - v.tp), 0), [cv]);
-
-  // Family total: parent's own debt + all children's debt
   const csFamille = useCallback(id => {
     const c = gc(id); if (!c) return { details: [], total: 0 };
     let members = [];
-    if (c.type === "Parent") {
-      members = [c, ...c.enfantsIds.map(gc).filter(Boolean)];
-    } else {
-      const p = gc(c.parentId);
-      if (p) members = [p, ...p.enfantsIds.map(gc).filter(Boolean)];
-      else members = [c];
-    }
+    if (c.type === "Parent") members = [c, ...c.enfantsIds.map(gc).filter(Boolean)];
+    else { const p = gc(c.parentId); if (p) members = [p, ...p.enfantsIds.map(gc).filter(Boolean)]; else members = [c]; }
     const details = members.map(m => ({ id: m.id, nom: m.prenom + " " + m.nom, solde: cs(m.id) }));
     return { details, total: details.reduce((s, d) => s + d.solde, 0) };
   }, [gc, cs]);
 
   const addV = (d) => {
     const p = cat.find(x => x.id === d.prest);
-    const ref = `V-${td().replace(/-/g, "").slice(0, 4)}-${String(vts.length + 1).padStart(4, "0")}`;
+    const ref = `V-2026-${String(vts.length + 1).padStart(4, "0")}`;
     const du = (d.prix || p?.prix || 0) - (d.rem || 0);
     let pays = [], tp = 0, st = "Non payée", fact = false;
     if (d.payNow && d.payMode) {
-      pays = [{ id: `py-${uid()}`, mt: du, mode: d.payMode, date: td(), chq: d.payChq || "" }];
-      tp = du; st = "Soldée"; fact = true;
-      setTimeout(() => flash("Facture générée auto", "info"), 500);
+      const payMt = d.payAmt ? Math.min(d.payAmt, du) : du;
+      pays = [{ id: `py-${uid()}`, mt: payMt, mode: d.payMode, date: td(), chq: d.payChq || "" }];
+      tp = payMt;
+      st = tp >= du ? "Soldée" : "Partielle";
+      fact = tp >= du;
+      if (fact) setTimeout(() => flash("Facture générée auto", "info"), 500);
     }
     const nv = { id: `v-${uid()}`, ref, cav: d.cav, pay: d.pay, prest: d.prest, detail: p?.nom || "", mt: d.prix || p?.prix || 0, rem: d.rem || 0, du, tp, st, date: td(), pays, fact };
     setVts(prev => [nv, ...prev]); flash("Vente créée"); return nv.id;
@@ -88,9 +84,7 @@ export default function App() {
       return n;
     }); flash("Client ajouté"); return nid;
   };
-
   const updCl = (id, d) => { setCls(prev => prev.map(c => c.id === id ? { ...c, ...d } : c)); flash("Client modifié"); };
-
   const togPr = (cr, dt, cav) => {
     setPrs(prev => {
       const ex = prev.find(p => p.cr === cr && p.date === dt && p.cav === cav);
@@ -98,17 +92,17 @@ export default function App() {
       return [...prev, { id: `pr-${uid()}`, cr, date: dt, cav, ok: true }];
     });
   };
-
-  const addHM = (cav, delta, motif) => {
-    setHm(prev => [...prev, { id: `hm-${uid()}`, cav, delta, motif, date: td() }]);
-    flash(delta > 0 ? `+${delta}h ajoutée(s)` : `${delta}h retirée(s)`);
-  };
-
+  const addHM = (cav, delta, motif) => { setHm(prev => [...prev, { id: `hm-${uid()}`, cav, delta, motif, date: td() }]); flash(delta > 0 ? `+${delta}h ajoutée(s)` : `${delta}h retirée(s)`); };
   const addCatItem = (d) => { setCat(prev => [...prev, { id: `p-${uid()}`, ...d, actif: true }]); flash("Prestation ajoutée"); };
   const updCatItem = (id, d) => { setCat(prev => prev.map(p => p.id === id ? { ...p, ...d } : p)); flash("Prestation modifiée"); };
   const delCatItem = (id) => { setCat(prev => prev.map(p => p.id === id ? { ...p, actif: false } : p)); flash("Prestation désactivée"); };
 
-  const ctx = { cls, cat, vts, crs, prs, hm, gc, gp, gf, cv, ch, cs, csFamille, addV, addP, addCl, updCl, togPr, addHM, addCatItem, updCatItem, delCatItem, selC, setSelC, selV, setSelV, tab, setTab, mdl, setMdl, flash, isDesktop };
+  // Créneau CRUD
+  const addCr = (d) => { setCrs(prev => [...prev, { id: `cr-${uid()}`, ...d }]); flash("Créneau créé"); };
+  const updCr = (id, d) => { setCrs(prev => prev.map(c => c.id === id ? { ...c, ...d } : c)); flash("Créneau modifié"); };
+  const delCr = (id) => { setCrs(prev => prev.filter(c => c.id !== id)); flash("Créneau supprimé"); };
+
+  const ctx = { cls, cat, vts, crs, prs, hm, gc, gp, gf, cv, ch, cs, csFamille, addV, addP, addCl, updCl, togPr, addHM, addCatItem, updCatItem, delCatItem, addCr, updCr, delCr, selC, setSelC, selV, setSelV, tab, setTab, mdl, setMdl, flash, isDesktop };
 
   return (
     <div style={{ minHeight: "100vh", background: "#12100c", fontFamily: "'DM Sans',sans-serif", color: "#e8dcc8" }}>
