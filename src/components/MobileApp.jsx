@@ -40,8 +40,8 @@ export default function MobileApp({ctx}){
         const act=tab===id||(id==="home"&&(tab==="fiche"||tab==="vd"));
         const isCaisse=id==="caisse";
         return<button key={id} onClick={()=>{setTab(id);setSelC(null);setSelV(null);}} style={{...S.navIt,color:act?"#d4af69":"#6a5f50"}} className="bh">
-          {isCaisse?<div style={{width:36,height:36,borderRadius:10,background:act?"#d4af69":"rgba(212,175,105,.12)",display:"flex",alignItems:"center",justifyContent:"center",marginTop:-8}}><Ico n="file" s={18} c={act?"#1a1207":"#d4af69"}/></div>:<Ico n={ic} s={20} c={act?"#d4af69":"#6a5f50"}/>}
-          <span style={{fontSize:10,color:act?"#d4af69":"#6a5f50",fontWeight:isCaisse?700:400}}>{lb}</span>
+          {isCaisse?<div style={{width:42,height:42,borderRadius:"50%",background:act?"#d4af69":"rgba(212,175,105,.15)",display:"flex",alignItems:"center",justifyContent:"center",marginTop:-14,border:"3px solid #12100c",boxShadow:"0 2px 12px rgba(212,175,105,.3)"}}><span style={{fontSize:20,fontWeight:800,color:act?"#1a1207":"#d4af69"}}>€</span></div>:<Ico n={ic} s={20} c={act?"#d4af69":"#6a5f50"}/>}
+          <span style={{fontSize:10,color:act?"#d4af69":"#6a5f50",fontWeight:isCaisse?700:400,marginTop:isCaisse?2:0}}>{lb}</span>
         </button>;
       })}
     </nav>
