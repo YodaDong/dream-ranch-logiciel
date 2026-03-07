@@ -13,6 +13,7 @@ export default function App() {
   const [crs, setCrs] = useState(INIT_CRENEAUX);
   const [prs, setPrs] = useState(INIT_PRESENCES);
   const [hm, setHm] = useState(INIT_HEURES_MANUELLES);
+  const [caisseMvts, setCaisseMvts] = useState([]);
   const [tab, setTab] = useState("home");
   const [selC, setSelC] = useState(null);
   const [selV, setSelV] = useState(null);
@@ -102,7 +103,10 @@ export default function App() {
   const updCr = (id, d) => { setCrs(prev => prev.map(c => c.id === id ? { ...c, ...d } : c)); flash("Créneau modifié"); };
   const delCr = (id) => { setCrs(prev => prev.filter(c => c.id !== id)); flash("Créneau supprimé"); };
 
-  const ctx = { cls, cat, vts, crs, prs, hm, gc, gp, gf, cv, ch, cs, csFamille, addV, addP, addCl, updCl, togPr, addHM, addCatItem, updCatItem, delCatItem, addCr, updCr, delCr, selC, setSelC, selV, setSelV, tab, setTab, mdl, setMdl, flash, isDesktop };
+  // Caisse
+  const addCaisseMvt = (d) => { setCaisseMvts(prev => [...prev, { id: `cm-${uid()}`, ...d }]); flash(d.type === "entree" ? "Entrée enregistrée" : "Sortie enregistrée"); };
+
+  const ctx = { cls, cat, vts, crs, prs, hm, caisseMvts, gc, gp, gf, cv, ch, cs, csFamille, addV, addP, addCl, updCl, togPr, addHM, addCatItem, updCatItem, delCatItem, addCr, updCr, delCr, addCaisseMvt, selC, setSelC, selV, setSelV, tab, setTab, mdl, setMdl, flash, isDesktop };
 
   return (
     <div style={{ minHeight: "100vh", background: "#12100c", fontFamily: "'DM Sans',sans-serif", color: "#e8dcc8" }}>
