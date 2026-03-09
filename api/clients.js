@@ -8,7 +8,7 @@ module.exports = async function handler(req, res) {
     // GET — list all clients
     if (req.method === "GET") {
       const data = await queryDB(DB.CLIENTS, undefined, [
-        { property: "Nom", direction: "ascending" },
+        
       ]);
       const clients = data.results.map(p => ({
         id: p.id,
@@ -21,8 +21,8 @@ module.exports = async function handler(req, res) {
         adresse: prop(p, "Adresse"),
         cp: prop(p, "Code postal"),
         ville: prop(p, "Ville"),
-        parentId: (prop(p, "Parent") || [])[0] || null,
-        enfantsIds: prop(p, "Enfants") || [],
+        parentId: (prop(p, "Parent") || undefined)[0] || null,
+        enfantsIds: prop(p, "Enfants") || undefined,
         actif: prop(p, "Actif") ?? true,
       }));
       return res.status(200).json(clients);

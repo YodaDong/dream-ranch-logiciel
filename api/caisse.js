@@ -8,7 +8,7 @@ module.exports = async function handler(req, res) {
     // GET — all caisse movements
     if (req.method === "GET") {
       const data = await queryDB(DB.CAISSE, undefined, [
-        { property: "Date", direction: "descending" },
+        
       ]);
       const mvts = data.results.map(p => ({
         id: p.id,
@@ -17,7 +17,7 @@ module.exports = async function handler(req, res) {
         mt: prop(p, "Montant") || 0,
         type: prop(p, "Type"),
         auto: prop(p, "Auto") ?? false,
-        paiement: (prop(p, "PAIEMENTS") || [])[0] || null,
+        paiement: (prop(p, "PAIEMENTS") || undefined)[0] || null,
       }));
       return res.status(200).json(mvts);
     }

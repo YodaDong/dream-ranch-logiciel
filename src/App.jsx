@@ -38,7 +38,7 @@ export default function App() {
         setCaisseMvts(data.caisse);
         setLoading(false);
       })
-      .catch(e => { console.error("Load error:", e); setErr(e.message); setLoading(false); });
+      .catch(e => { console.error("Load error:", e); setLoading(false); });
   }, []);
 
   const reload = async (what) => {

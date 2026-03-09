@@ -8,7 +8,7 @@ module.exports = async function handler(req, res) {
     if (req.method === "GET") {
       // Get all créneaux
       const data = await queryDB(DB.PLANNING, undefined, [
-        { property: "Jour", direction: "ascending" },
+        
       ]);
       const creneaux = data.results.map(p => ({
         id: p.id,
@@ -16,7 +16,7 @@ module.exports = async function handler(req, res) {
         jour: prop(p, "Jour"),
         heure: prop(p, "Start Date"),
         duree: prop(p, "Minutes") || 60,
-        cavs: prop(p, "Cavaliers") || [],
+        cavs: prop(p, "Cavaliers") || undefined,
       }));
       return res.status(200).json(creneaux);
     }

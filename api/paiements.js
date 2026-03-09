@@ -13,12 +13,12 @@ module.exports = async function handler(req, res) {
         filter = { property: "Prestation cavalier", relation: { contains: vente } };
       }
       const data = await queryDB(DB.PAIEMENTS, filter, [
-        { property: "Date", direction: "descending" },
+        
       ]);
       const paiements = data.results.map(p => ({
         id: p.id,
         ref: prop(p, "Référence"),
-        vente: (prop(p, "Prestation cavalier") || [])[0] || null,
+        vente: (prop(p, "Prestation cavalier") || undefined)[0] || null,
         mt: prop(p, "Montant") || 0,
         mode: prop(p, "Règlement"),
         chq: prop(p, "N° chèque"),

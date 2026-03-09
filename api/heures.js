@@ -13,11 +13,11 @@ module.exports = async function handler(req, res) {
         filter = { property: "Cavalier", relation: { contains: cavalier } };
       }
       const data = await queryDB(DB.HEURES_MANUELLES, filter, [
-        { property: "Date", direction: "descending" },
+        
       ]);
       const heures = data.results.map(p => ({
         id: p.id,
-        cav: (prop(p, "Cavalier") || [])[0] || null,
+        cav: (prop(p, "Cavalier") || undefined)[0] || null,
         delta: prop(p, "Delta") || 0,
         motif: prop(p, "Détail"),
         date: prop(p, "Date"),

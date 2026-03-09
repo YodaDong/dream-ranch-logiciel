@@ -8,7 +8,7 @@ module.exports = async function handler(req, res) {
   try {
     const data = await queryDB(DB.PRESTATIONS, 
       { property: "Active", checkbox: { equals: true } },
-      [{ property: "Nom", direction: "ascending" }]
+      undefined
     );
     const prestations = data.results.map(p => ({
       id: p.id,
