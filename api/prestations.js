@@ -6,7 +6,7 @@ module.exports = async function handler(req, res) {
   if (req.method !== "GET") return res.status(405).end();
   try {
     const data = await queryAll(DB.PRESTATIONS, { property: "Active", checkbox: { equals: true } });
-    const prestations = data.results.map(p => ({
+    const prestations = data.map(p => ({
       id: p.id,
       nom: prop(p, "Nom") || "",
       cat: prop(p, "Catégorie") || "Autre",

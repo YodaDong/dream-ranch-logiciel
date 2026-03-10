@@ -6,7 +6,7 @@ module.exports = async function handler(req, res) {
   try {
     if (req.method === "GET") {
       const data = await queryAll(DB.PLANNING);
-      const creneaux = data.results.map(p => ({
+      const creneaux = data.map(p => ({
         id: p.id,
         nom: prop(p, "Nom") || "",
         jour: prop(p, "Jour") || "",

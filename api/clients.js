@@ -6,7 +6,7 @@ module.exports = async function handler(req, res) {
   try {
     if (req.method === "GET") {
       const data = await queryAll(DB.CLIENTS);
-      const clients = data.results.map(p => ({
+      const clients = data.map(p => ({
         id: p.id,
         nom: prop(p, "Nom") || "",
         prenom: prop(p, "Prénom") || "",
