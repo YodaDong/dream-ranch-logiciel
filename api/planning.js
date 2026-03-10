@@ -1,11 +1,11 @@
-const { DB, queryDB, createPage, updatePage, cors, prop } = require("./_notion");
+const { DB, queryAll, createPage, updatePage, cors, prop } = require("./_notion");
 
 module.exports = async function handler(req, res) {
   cors(res);
   if (req.method === "OPTIONS") return res.status(200).end();
   try {
     if (req.method === "GET") {
-      const data = await queryDB(DB.PLANNING);
+      const data = await queryAll(DB.PLANNING);
       const creneaux = data.results.map(p => ({
         id: p.id,
         nom: prop(p, "Nom") || "",

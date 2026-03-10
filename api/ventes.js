@@ -1,27 +1,38 @@
-const { DB, queryDB, createPage, cors, prop } = require("./_notion");
+const { DB, queryAll, createPage, cors, prop } = require("./_notion");
 
 module.exports = async function handler(req, res) {
   cors(res);
   if (req.method === "OPTIONS") return res.status(200).end();
   try {
     if (req.method === "GET") {
-      const data = await queryDB(DB.VENTES);
-      const ventes = data.results.map(p => ({
-        id: p.id,
-        ref: prop(p, "Référence") || "",
-        cav: (prop(p, "Cavalier") || [])[0] || null,
-        pay: (prop(p, "Client payeur") || [])[0] || null,
-        prest: (prop(p, "Prestations") || [])[0] || null,
-        detail: prop(p, "Détail") || "",
-        mt: prop(p, "Montant TTC") || 0,
-        rem: prop(p, "Remise") || 0,
-        du: prop(p, "Montant du") || 0,
-        tp: 0,
-        st: prop(p, "Statut") || "Non payée",
-        date: prop(p, "Date") || "",
-        pays: [],
-        fact: false,
-      }));
+      // Get all ventes and all paiements in parallel
+      const [ventesRaw, paiementsRaw] = await Promise.all([
+        queryAll(DB.VENTES),
+        queryAll(DB.PAIEMENTS).catch(() => []),
+      ]);
+      // Build paiements map: venteId -> [{mt, mode, date, chq}]
+      const payMap = {};
+      for (const p of paiementsRaw) {
+        const venteIds = prop(p, "Prestation cavalier") || [];
+        const pay = { id: p.id, mt: prop(p, "Montant") || 0, mode: prop(p, "Règlement") || "", date: prop(p, "Date") || "", chq: prop(p, "N° chèque") || "" };
+        for (const vid of venteIds) {
+          if (!payMap[vid]) payMap[vid] = [];
+          payMap[vid].push(pay);
+        }
+      }
+      const ventes = ventesRaw.map(p => {
+        const pays = payMap[p.id] || [];
+        const tp = pays.reduce((s, py) => s + py.mt, 0);
+        const mt = prop(p, "Montant TTC") || 0;
+        const rem = prop(p, "Remise") || 0;
+        const du = mt - rem;
+        const st = tp <= 0 ? "Non payée" : tp >= du ? "Soldée" : "Partielle";
+        return {
+          id: p.id, ref: prop(p, "Référence") || "", cav: (prop(p, "Cavalier") || [])[0] || null,
+          pay: (prop(p, "Client payeur") || [])[0] || null, prest: (prop(p, "Prestations") || [])[0] || null,
+          detail: prop(p, "Détail") || "", mt, rem, du, tp, st, date: prop(p, "Date") || "", pays, fact: false,
+        };
+      });
       return res.status(200).json(ventes);
     }
     if (req.method === "POST") {

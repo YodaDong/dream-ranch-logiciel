@@ -1,11 +1,11 @@
-const { DB, queryDB, cors, prop } = require("./_notion");
+const { DB, queryAll, cors, prop } = require("./_notion");
 
 module.exports = async function handler(req, res) {
   cors(res);
   if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "GET") return res.status(405).end();
   try {
-    const data = await queryDB(DB.PRESTATIONS, { property: "Active", checkbox: { equals: true } });
+    const data = await queryAll(DB.PRESTATIONS, { property: "Active", checkbox: { equals: true } });
     const prestations = data.results.map(p => ({
       id: p.id,
       nom: prop(p, "Nom") || "",

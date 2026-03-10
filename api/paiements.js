@@ -1,11 +1,11 @@
-const { DB, queryDB, createPage, cors, prop } = require("./_notion");
+const { DB, queryAll, createPage, cors, prop } = require("./_notion");
 
 module.exports = async function handler(req, res) {
   cors(res);
   if (req.method === "OPTIONS") return res.status(200).end();
   try {
     if (req.method === "GET") {
-      const data = await queryDB(DB.PAIEMENTS);
+      const data = await queryAll(DB.PAIEMENTS);
       const paiements = data.results.map(p => ({
         id: p.id,
         ref: prop(p, "Référence") || "",

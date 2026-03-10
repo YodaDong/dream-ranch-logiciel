@@ -1,11 +1,11 @@
-const { DB, queryDB, createPage, updatePage, cors, prop } = require("./_notion");
+const { DB, queryAll, createPage, updatePage, cors, prop } = require("./_notion");
 
 module.exports = async function handler(req, res) {
   cors(res);
   if (req.method === "OPTIONS") return res.status(200).end();
   try {
     if (req.method === "GET") {
-      const data = await queryDB(DB.PRESENCES);
+      const data = await queryAll(DB.PRESENCES);
       const presences = data.results.map(p => ({
         id: p.id,
         cr: (prop(p, "Créneau") || [])[0] || null,
@@ -17,7 +17,7 @@ module.exports = async function handler(req, res) {
     }
     if (req.method === "POST") {
       const d = req.body;
-      const existing = await queryDB(DB.PRESENCES, { and: [
+      const existing = await queryAll(DB.PRESENCES, { and: [
         { property: "Créneau", relation: { contains: d.creneauId } },
         { property: "Date", date: { equals: d.date } },
         { property: "FICHIER CLIENT", relation: { contains: d.cavalierId } },

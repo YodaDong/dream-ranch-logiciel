@@ -21,11 +21,18 @@ async function notion(path, method = "GET", body = null) {
   return res.json();
 }
 
-async function queryDB(dbId, filter, startCursor) {
-  const body = { page_size: 100 };
-  if (filter) body.filter = filter;
-  if (startCursor) body.start_cursor = startCursor;
-  return notion(`/databases/${dbId}/query`, "POST", body);
+// Query with auto-pagination (fetches ALL results)
+async function queryAll(dbId, filter) {
+  let all = [], cursor = undefined;
+  do {
+    const body = { page_size: 100 };
+    if (filter) body.filter = filter;
+    if (cursor) body.start_cursor = cursor;
+    const data = await notion(`/databases/${dbId}/query`, "POST", body);
+    all = all.concat(data.results);
+    cursor = data.has_more ? data.next_cursor : null;
+  } while (cursor);
+  return all;
 }
 
 async function createPage(dbId, properties) {
@@ -50,22 +57,19 @@ function prop(page, name) {
     case "rich_text": return p.rich_text.map(t => t.plain_text).join("");
     case "number": return p.number;
     case "select": return p.select?.name || null;
-    case "multi_select": return p.multi_select.map(s => s.name);
     case "checkbox": return p.checkbox;
     case "date": return p.date?.start || null;
     case "relation": return p.relation.map(r => r.id);
     case "formula":
       if (p.formula.type === "string") return p.formula.string;
       if (p.formula.type === "number") return p.formula.number;
-      if (p.formula.type === "boolean") return p.formula.boolean;
       return null;
     case "rollup":
       if (p.rollup.type === "number") return p.rollup.number;
       return null;
     case "email": return p.email;
-    case "phone_number": return p.phone_number;
     default: return null;
   }
 }
 
-module.exports = { DB, notion, queryDB, createPage, updatePage, cors, prop };
+module.exports = { DB, notion, queryAll, createPage, updatePage, cors, prop };
