@@ -22,10 +22,10 @@ module.exports = async function handler(req, res) {
         { property: "Date", date: { equals: d.date } },
         { property: "FICHIER CLIENT", relation: { contains: d.cavalierId } },
       ]});
-      if (existing.results.length > 0) {
-        const current = prop(existing.results[0], "Présent");
-        await updatePage(existing.results[0].id, { "Présent": { checkbox: !current } });
-        return res.status(200).json({ id: existing.results[0].id, ok: !current });
+      if (existing.length > 0) {
+        const current = prop(existing[0], "Présent");
+        await updatePage(existing[0].id, { "Présent": { checkbox: !current } });
+        return res.status(200).json({ id: existing[0].id, ok: !current });
       } else {
         const page = await createPage(DB.PRESENCES, {
           "Nom": { title: [{ text: { content: "" } }] },
