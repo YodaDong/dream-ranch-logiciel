@@ -150,11 +150,19 @@ export default function App() {
     } catch (e) { flash("Erreur: " + e.message, "err"); }
   };
 
+  const delV = async (vid) => {
+    try {
+      await API.deleteVente(vid);
+      flash("Prestation supprimée");
+      await reload("ventes");
+    } catch (e) { flash("Erreur: " + e.message, "err"); }
+  };
+
   const addCatItem = () => flash("Gérer le catalogue dans Notion");
   const updCatItem = () => flash("Gérer le catalogue dans Notion");
   const delCatItem = () => flash("Gérer le catalogue dans Notion");
 
-  const ctx = { cls, cat, vts, crs, prs, hm, caisseMvts, gc, gp, gf, cv, ch, cs, csFamille, addV, addP, addCl, updCl, togPr, addHM, addCatItem, updCatItem, delCatItem, addCr, updCr, delCr, addCaisseMvt, selC, setSelC, selV, setSelV, tab, setTab, mdl, setMdl, flash, isDesktop };
+  const ctx = { cls, cat, vts, crs, prs, hm, caisseMvts, gc, gp, gf, cv, ch, cs, csFamille, addV, addP, addCl, updCl, togPr, addHM, addCatItem, updCatItem, delCatItem, addCr, updCr, delCr, addCaisseMvt, delV, selC, setSelC, selV, setSelV, tab, setTab, mdl, setMdl, flash, isDesktop };
 
   if (loading) return (
     <div style={{ minHeight: "100vh", background: "#12100c", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", fontFamily: "'DM Sans',sans-serif", color: "#d4af69" }}>

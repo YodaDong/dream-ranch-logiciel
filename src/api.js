@@ -23,6 +23,7 @@ export const updateClient = (id, data) => call("/clients", "PATCH", { id, ...dat
 export const getPrestations = () => call("/prestations");
 export const getVentes = () => call("/ventes");
 export const createVente = (data) => call("/ventes", "POST", data);
+export const deleteVente = (id) => call("/ventes", "DELETE", { id });
 export const getPaiements = (venteId) => call(`/paiements${venteId ? `?vente=${venteId}` : ""}`);
 export const createPaiement = (data) => call("/paiements", "POST", data);
 export const getPlanning = () => call("/planning");

@@ -1,4 +1,4 @@
-const { DB, queryAll, createPage, cors, prop } = require("./_notion");
+const { DB, queryAll, createPage, updatePage, notion, cors, prop } = require("./_notion");
 
 module.exports = async function handler(req, res) {
   cors(res);
@@ -51,6 +51,14 @@ module.exports = async function handler(req, res) {
       };
       const page = await createPage(DB.VENTES, properties);
       return res.status(201).json({ id: page.id, ref });
+    }
+    if (req.method === "DELETE") {
+      const { id } = req.body;
+      if (!id) return res.status(400).json({ error: "id required" });
+      await updatePage(id, {});
+      // Archive the page
+      const archiveRes = await notion(`/pages/${id}`, "PATCH", { archived: true });
+      return res.status(200).json({ ok: true });
     }
     return res.status(405).end();
   } catch (err) { console.error(err); return res.status(500).json({ error: err.message }); }
