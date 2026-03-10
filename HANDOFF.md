@@ -247,3 +247,26 @@ Accueil | Clients | Planning | **€ Caisse** (bouton cercle doré proéminent)
 **Commit** : `6288a59` — hotfix: clients.js queryDB → queryAll
 **Version** : v4.3 + hotfix
 **État** : L'app se charge mais des données peuvent manquer si les bases PAIEMENTS et HEURE MANUELLE ne sont pas connectées à l'intégration Notion.
+
+---
+
+## 11. PROBLÈME ACTUEL (10 mars 2026, 16h)
+
+**L'app affiche un écran vide (aucune donnée).** Causes probables dans cet ordre :
+
+1. **Base PAIEMENTS non connectée** à l'intégration Notion → la route `/api/ventes` fait un `queryAll(DB.PAIEMENTS)` qui plante en 404. Le `.catch(() => [])` devrait gérer ça mais peut causer un timeout Vercel.
+
+2. **Base Heure manuelle non connectée** → même problème pour `/api/heures`.
+
+**ACTION IMMÉDIATE POUR DÉBLOQUER :**
+- Ouvrir Notion → base PAIEMENTS → "..." → Connexions → ajouter "DREAM RANCH /Logiciel"
+- Ouvrir Notion → base Heure manuelle (31edae11...3977) → même chose
+- Recharger l'app
+
+**Si ça ne marche toujours pas :**
+- Ouvrir le navigateur desktop : `https://[vercel-url]/api/clients` → doit retourner du JSON
+- Tester : `https://[vercel-url]/api/ventes` → si erreur, c'est PAIEMENTS pas connecté
+- Tester : `https://[vercel-url]/api/heures` → si erreur, c'est HEURE MANUELLE pas connecté
+
+**Alternative rapide** : dans `api/ventes.js`, remplacer la ligne `queryAll(DB.PAIEMENTS).catch(() => [])` par juste `Promise.resolve([])` pour ignorer les paiements temporairement et que les ventes s'affichent.
+
