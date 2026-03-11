@@ -50,13 +50,19 @@ function MEditC({ctx,cl}){const c=ctx.gc(ctx.mdl.cid);if(!c)return null;const is
 }
 
 function MPres({ctx,cl}){
-  const cr=ctx.crs.find(z=>z.id===ctx.mdl.crid);if(!cr)return null;const d=td();
-  const initState={};cr.cavs.forEach(id=>{const pr=ctx.prs.find(p=>p.cr===cr.id&&p.date===d&&p.cav===id);initState[id]=pr?.ok||false;});
-  const[local,setLocal]=useState(initState);const[saving,setSaving]=useState(false);
+  const cr=ctx.crs.find(z=>z.id===ctx.mdl.crid);if(!cr)return null;
+  const[date,setDate]=useState(td());
+  // Compute initial state based on selected date
+  const computeState=(dt)=>{const s={};cr.cavs.forEach(id=>{const pr=ctx.prs.find(p=>p.cr===cr.id&&p.date===dt&&p.cav===id);s[id]=pr?.ok||false;});return s;};
+  const[local,setLocal]=useState(()=>computeState(date));
+  const[saving,setSaving]=useState(false);
+  // When date changes, reload checkboxes
+  const changeDate=(dt)=>{setDate(dt);setLocal(computeState(dt));};
   const toggle=(id)=>setLocal(prev=>({...prev,[id]:!prev[id]}));
-  const save=async()=>{setSaving(true);try{for(const id of cr.cavs){const wasOk=ctx.prs.find(p=>p.cr===cr.id&&p.date===d&&p.cav===id)?.ok||false;if(local[id]!==wasOk){await ctx.togPr(cr.id,d,id);}}cl();}catch(e){setSaving(false);}};
+  const save=async()=>{setSaving(true);try{for(const id of cr.cavs){const wasOk=ctx.prs.find(p=>p.cr===cr.id&&p.date===date&&p.cav===id)?.ok||false;if(local[id]!==wasOk){await ctx.togPr(cr.id,date,id);}}cl();}catch(e){setSaving(false);}};
   return<><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}><h3 style={{...MS.tt,margin:0}}>Présences — {cr.nom}</h3><button onClick={()=>ctx.setMdl({t:"ecr",crid:cr.id})} style={MS.iBtn} className="bh"><Ico n="edit" s={16} c="#d4af69"/></button></div>
-    <p style={{color:"#7a6f60",fontSize:13,marginBottom:12}}>{cr.jour} {cr.heure} · {fD(d)}</p>
+    <p style={{color:"#7a6f60",fontSize:13,marginBottom:6}}>{cr.jour} {cr.heure}</p>
+    <Fld l="Date du cours" t="date" v={date} o={changeDate}/>
     {cr.cavs.length===0&&<p style={{color:"#5a5040",fontSize:13,padding:10}}>Aucun cavalier — modifier le créneau pour en ajouter</p>}
     {cr.cavs.map(id=>{const c=ctx.gc(id);if(!c)return null;const ok=local[id]||false;return<button key={id} onClick={()=>toggle(id)} style={{...MS.lRow,padding:"12px 8px"}} className="bh rh"><div style={{width:24,height:24,borderRadius:6,border:`2px solid ${ok?"#5ae8a0":"#7a6f60"}`,background:ok?"#5ae8a0":"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{ok&&<Ico n="chk" s={14} c="#1a1207"/>}</div><span style={{color:"#e8dcc8",fontSize:14,flex:1}}>{c.prenom} {c.nom}</span><span style={{color:ok?"#5ae8a0":"#7a6f60",fontSize:12}}>{ok?"Présent":"Absent"}</span></button>})}
     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:16}}><button onClick={cl} style={{...MS.dBtn,background:"rgba(212,175,105,.08)",color:"#7a6f60"}} className="bh">Annuler</button><button onClick={save} disabled={saving} style={{...MS.pBtn,opacity:saving?.5:1}} className="bh">{saving?"Enregistrement...":"Enregistrer"}</button></div></>;
@@ -74,8 +80,18 @@ function MNewCreneau({ctx,cl}){const[nom,setNom]=useState("");const[jour,setJour
 export function MNewVQuick({ctx,cl}){
   const[q,setQ]=useState("");const[cid,setCid]=useState(null);
   const res=q.length>=2?ctx.cls.filter(c=>{const w=q.toLowerCase().split(/\s+/);return w.every(z=>`${c.prenom} ${c.nom}`.toLowerCase().includes(z));}).slice(0,8):[];
+  // Find or create "Cavalier de passage"
+  const passage=ctx.cls.find(c=>c.nom==="PASSAGE"&&c.prenom==="Cavalier de");
+  const selectPassage=async()=>{
+    if(passage){setCid(passage.id);return;}
+    const newId=await ctx.addCl({nom:"PASSAGE",prenom:"Cavalier de",type:"Parent",parentId:"",tel:"",email:"",naissance:"",adresse:"",cp:"",ville:""});
+    if(newId)setCid(newId);
+  };
   if(cid)return <MNewVInner ctx={ctx} cl={cl} cid={cid} back={()=>setCid(null)}/>;
-  return<><h3 style={{fontFamily:"'DM Serif Display',serif",fontSize:18,color:"#d4af69",margin:"0 0 12px",fontWeight:400}}>Nouvelle prestation</h3><p style={{color:"#7a6f60",fontSize:13,marginBottom:12}}>Choisir le cavalier</p><div style={{display:"flex",alignItems:"center",background:"rgba(212,175,105,.06)",border:"1px solid rgba(212,175,105,.12)",borderRadius:12,padding:"0 14px",gap:10,marginBottom:10}}><Ico n="srch" s={14} c="#7a6f60"/><input placeholder="Rechercher cavalier..." value={q} onChange={e=>setQ(e.target.value)} style={{flex:1,background:"transparent",border:"none",color:"#e8dcc8",fontSize:14,padding:"11px 0",outline:"none",fontFamily:"inherit"}} autoFocus autoComplete="off"/></div><div style={{maxHeight:300,overflowY:"auto"}}>{(q.length>=2?res:ctx.cls.sort((a,b)=>a.nom.localeCompare(b.nom)).slice(0,12)).map(c=><button key={c.id} onClick={()=>setCid(c.id)} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 4px",width:"100%",border:"none",borderBottom:"1px solid rgba(212,175,105,.05)",background:"transparent",cursor:"pointer",textAlign:"left",fontFamily:"inherit"}} className="bh rh"><div style={{width:32,height:32,borderRadius:"50%",background:"rgba(212,175,105,.08)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0}}>{c.type==="Enfant"?"👧":"👤"}</div><div style={{flex:1}}><div style={{fontWeight:600,color:"#e8dcc8",fontSize:13}}>{c.prenom} {c.nom}</div><div style={{color:"#7a6f60",fontSize:11}}>{c.type}</div></div></button>)}</div></>;
+  return<><h3 style={{fontFamily:"'DM Serif Display',serif",fontSize:18,color:"#d4af69",margin:"0 0 12px",fontWeight:400}}>Nouvelle prestation</h3><p style={{color:"#7a6f60",fontSize:13,marginBottom:12}}>Choisir le cavalier</p>
+    {/* Bouton cavalier de passage */}
+    <button onClick={selectPassage} style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",width:"100%",border:"1px dashed rgba(212,175,105,.3)",borderRadius:12,background:"rgba(212,175,105,.04)",cursor:"pointer",textAlign:"left",fontFamily:"inherit",marginBottom:12}} className="bh rh"><div style={{width:32,height:32,borderRadius:"50%",background:"rgba(212,175,105,.15)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0}}>🏇</div><div style={{flex:1}}><div style={{fontWeight:600,color:"#d4af69",fontSize:13}}>Cavalier de passage</div><div style={{color:"#7a6f60",fontSize:11}}>Sans compte client</div></div></button>
+    <div style={{display:"flex",alignItems:"center",background:"rgba(212,175,105,.06)",border:"1px solid rgba(212,175,105,.12)",borderRadius:12,padding:"0 14px",gap:10,marginBottom:10}}><Ico n="srch" s={14} c="#7a6f60"/><input placeholder="Rechercher cavalier..." value={q} onChange={e=>setQ(e.target.value)} style={{flex:1,background:"transparent",border:"none",color:"#e8dcc8",fontSize:14,padding:"11px 0",outline:"none",fontFamily:"inherit"}} autoFocus autoComplete="off"/></div><div style={{maxHeight:300,overflowY:"auto"}}>{(q.length>=2?res:ctx.cls.filter(c=>c.nom!=="PASSAGE").sort((a,b)=>a.nom.localeCompare(b.nom)).slice(0,12)).map(c=><button key={c.id} onClick={()=>setCid(c.id)} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 4px",width:"100%",border:"none",borderBottom:"1px solid rgba(212,175,105,.05)",background:"transparent",cursor:"pointer",textAlign:"left",fontFamily:"inherit"}} className="bh rh"><div style={{width:32,height:32,borderRadius:"50%",background:"rgba(212,175,105,.08)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0}}>{c.type==="Enfant"?"👧":"👤"}</div><div style={{flex:1}}><div style={{fontWeight:600,color:"#e8dcc8",fontSize:13}}>{c.prenom} {c.nom}</div><div style={{color:"#7a6f60",fontSize:11}}>{c.type}</div></div></button>)}</div></>;
 }
 
 function MNewVInner({ctx,cl,cid,back}){
