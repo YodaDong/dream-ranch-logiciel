@@ -16,9 +16,13 @@
 - Credential Notion dans n8n : "DREAM RANCH /Logiciel" (ID : cLrcinBjorH0yc0C)
 
 **Tokens & API Keys :**
-Tous les tokens (Notion, GitHub, Vercel) sont dans le fichier **`.env`** à la racine du projet.
-Ce fichier est ignoré par git — demander au propriétaire du projet pour l'obtenir.
-Le token Notion est aussi configuré sur Vercel > Settings > Environment Variables (`NOTION_KEY`).
+Tous les tokens sont stockés dans **Vercel > Settings > Environment Variables** :
+- `NOTION_KEY` → token d'API Notion (utilisé par le code serveur)
+- `NOTION_TOKEN_CLAIR` → même token Notion en backup lisible
+- `GITHUB_TOKEN` → token GitHub (repo YodaDong)
+- `VERCEL_TOKEN` → token Vercel (déploiement + API)
+
+Pour y accéder : https://vercel.com/dashboard → projet dream-ranch-logiciel → Settings → Environment Variables.
 
 ---
 
