@@ -11,9 +11,14 @@
 
 **URLs :**
 - GitHub : `YodaDong/dream-ranch-logiciel`
-- Vercel : déploiement auto sur push main
+- Vercel : `https://dream-ranch-logiciel.vercel.app`
 - n8n : `https://n8n.srv908649.hstgr.cloud` (pour futures automatisations uniquement)
 - Credential Notion dans n8n : "DREAM RANCH /Logiciel" (ID : cLrcinBjorH0yc0C)
+
+**Tokens & API Keys :**
+Tous les tokens (Notion, GitHub, Vercel) sont dans le fichier **`.env`** à la racine du projet.
+Ce fichier est ignoré par git — demander au propriétaire du projet pour l'obtenir.
+Le token Notion est aussi configuré sur Vercel > Settings > Environment Variables (`NOTION_KEY`).
 
 ---
 
