@@ -112,10 +112,10 @@ function Fiche({ctx}){
         {/* Achats de prestations avec heures */}
         {vts.filter(vt=>{const p=ctx.cat.find(z=>z.id===vt.prest);return p?.h>0;}).sort((a,b)=>(b.date||"").localeCompare(a.date||"")).map(vt=>{const p=ctx.cat.find(z=>z.id===vt.prest);return<div key={"vt-"+vt.id} style={{...S.lRow,cursor:"default"}}><div style={{flex:1}}><div style={S.rT}>{vt.detail||p?.nom||"Prestation"}</div><div style={S.rS}>{fD(vt.date)} · Achat</div></div><span style={{fontSize:13,fontWeight:700,color:"#5ae8a0"}}>+{p?.h||0}h</span></div>})}
         {/* Présences (heures prises) */}
-        {ctx.prs.filter(p=>p.cav===c.id&&p.ok).sort((a,b)=>(b.date||"").localeCompare(a.date||"")).map(p=>{const cr=ctx.crs.find(x=>x.id===p.cr);return<div key={p.id} style={{...S.lRow,cursor:"default"}}><div style={{flex:1}}><div style={S.rT}>{cr?.nom||"Cours"}</div><div style={S.rS}>{fD(p.date)} · Présence</div></div><span style={{fontSize:13,fontWeight:700,color:"#e87a7a"}}>-1h</span></div>})}
+        {ctx.prs.filter(p=>p.cav===c.id&&(p.ok||p.statut==="Présent"||p.statut==="Absent débité")).sort((a,b)=>(b.date||"").localeCompare(a.date||"")).map(p=>{const cr=ctx.crs.find(x=>x.id===p.cr);const forfait=p.forfaitId?ctx.vts.find(v=>v.id===p.forfaitId):null;const forfaitPrest=forfait?ctx.cat.find(x=>x.id===forfait.prest):null;return<div key={p.id} style={{...S.lRow,cursor:"default"}}><div style={{flex:1}}><div style={S.rT}>{cr?.nom||"Cours"}{p.statut==="Absent débité"?" (absent)":""}</div><div style={S.rS}>{fD(p.date)} · {p.statut||"Présence"}{forfaitPrest?` · ${forfaitPrest.nom}`:forfait?` · ${forfait.detail}`:""}</div></div><span style={{fontSize:13,fontWeight:700,color:"#e87a7a"}}>-1h</span></div>})}
         {/* Ajustements manuels — afficher le motif */}
         {heurHist.map(h=><div key={h.id} style={{...S.lRow,cursor:"default"}}><div style={{flex:1}}><div style={{...S.rT,color:h.delta>0?"#5ae8a0":"#e87a7a"}}>{h.delta>0?"+":""}{h.delta}h — {h.motif||"Ajustement"}</div><div style={S.rS}>{fD(h.date)}</div></div></div>)}
-        {vts.filter(vt=>{const p=ctx.cat.find(z=>z.id===vt.prest);return p?.h>0;}).length===0&&heurHist.length===0&&ctx.prs.filter(p=>p.cav===c.id&&p.ok).length===0&&<p style={S.mt}>Aucun historique</p>}
+        {vts.filter(vt=>{const p=ctx.cat.find(z=>z.id===vt.prest);return p?.h>0;}).length===0&&heurHist.length===0&&ctx.prs.filter(p=>p.cav===c.id&&(p.ok||p.statut==="Présent"||p.statut==="Absent débité")).length===0&&<p style={S.mt}>Aucun historique</p>}
       </>}
     </div>
   </div>;

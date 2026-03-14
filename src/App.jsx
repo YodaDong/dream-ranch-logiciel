@@ -64,7 +64,7 @@ export default function App() {
   const ch = useCallback(id => {
     const v = cv(id);
     const achats = v.reduce((s, vt) => { const p = cat.find(x => x.id === vt.prest); return s + (p?.h || 0); }, 0);
-    const consommes = prs.filter(p => p.cav === id && p.ok).length;
+    const consommes = prs.filter(p => p.cav === id && (p.ok || p.statut === "Présent" || p.statut === "Absent débité")).length;
     const manuels = hm.filter(h => h.cav === id).reduce((s, h) => s + h.delta, 0);
     return { achats, consommes, manuels, solde: achats - consommes + manuels };
   }, [cv, prs, hm, cat]);
