@@ -33,7 +33,7 @@ export const getPresences = (date, creneau) => {
   const p = []; if (date) p.push(`date=${date}`); if (creneau) p.push(`creneau=${creneau}`);
   return call(`/presences${p.length ? "?" + p.join("&") : ""}`);
 };
-export const togglePresence = (creneauId, date, cavalierId) => call("/presences", "POST", { creneauId, date, cavalierId });
+export const togglePresence = (creneauId, date, cavalierId, statut, forfaitId, heures) => call("/presences", "POST", { creneauId, date, cavalierId, statut, forfaitId, heures });
 export const getHeures = () => call("/heures");
 export const addHeures = (data) => call("/heures", "POST", data);
 export const getCaisse = () => call("/caisse");

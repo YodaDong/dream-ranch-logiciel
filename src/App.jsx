@@ -117,9 +117,50 @@ export default function App() {
     catch (e) { flash("Erreur: " + e.message, "err"); }
   };
 
+  // Get active forfaits for a cavalier (ventes with hours remaining)
+  const getActiveForfaits = useCallback(id => {
+    return cv(id).filter(v => {
+      const p = cat.find(x => x.id === v.prest);
+      if (!p || !p.impH || !p.h) return false;
+      // Calculate hours remaining for this vente
+      const consommes = prs.filter(pr => pr.forfaitId === v.id && (pr.statut === "Présent" || pr.statut === "Absent débité")).length;
+      const manuels = hm.filter(h => h.cav === id).reduce((s, h) => s + h.delta, 0);
+      const reste = p.h - consommes;
+      return reste > 0;
+    }).map(v => {
+      const p = cat.find(x => x.id === v.prest);
+      const consommes = prs.filter(pr => pr.forfaitId === v.id && (pr.statut === "Présent" || pr.statut === "Absent débité")).length;
+      return { id: v.id, nom: p?.nom || v.detail, heuresTotal: p?.h || 0, heuresConsommees: consommes, heuresRestantes: (p?.h || 0) - consommes };
+    });
+  }, [cv, cat, prs, hm]);
+
   const togPr = async (cr, dt, cav) => {
     try { await API.togglePresence(cr, dt, cav); await reload("presences"); }
     catch (e) { flash("Erreur: " + e.message, "err"); }
+  };
+
+  // New: set presence with statut + forfait
+  const setPresence = async (creneauId, date, cavalierId, statut, forfaitId = null) => {
+    try {
+      const heures = (statut === "Présent" || statut === "Absent débité") ? 1 : 0;
+      await API.togglePresence(creneauId, date, cavalierId, statut, forfaitId, heures);
+      if (statut === "Présent" || statut === "Absent débité") {
+        flash(forfaitId ? "Présence enregistrée (−1h)" : "Présence enregistrée");
+      } else {
+        flash("Annulation enregistrée");
+      }
+      await reload("presences");
+    } catch (e) { flash("Erreur: " + e.message, "err"); }
+  };
+
+  // New: remove presence entry
+  const removePresence = async (presenceId) => {
+    try {
+      const opts = { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: presenceId }) };
+      await fetch("/api/presences", opts);
+      flash("Cavalier retiré");
+      await reload("presences");
+    } catch (e) { flash("Erreur: " + e.message, "err"); }
   };
 
   const addHM = async (cav, delta, motif, date) => {
@@ -162,7 +203,7 @@ export default function App() {
   const updCatItem = () => flash("Gérer le catalogue dans Notion");
   const delCatItem = () => flash("Gérer le catalogue dans Notion");
 
-  const ctx = { cls, cat, vts, crs, prs, hm, caisseMvts, gc, gp, gf, cv, ch, cs, csFamille, addV, addP, addCl, updCl, togPr, addHM, addCatItem, updCatItem, delCatItem, addCr, updCr, delCr, addCaisseMvt, delV, selC, setSelC, selV, setSelV, tab, setTab, mdl, setMdl, flash, isDesktop };
+  const ctx = { cls, cat, vts, crs, prs, hm, caisseMvts, gc, gp, gf, cv, ch, cs, csFamille, getActiveForfaits, addV, addP, addCl, updCl, togPr, setPresence, removePresence, addHM, addCatItem, updCatItem, delCatItem, addCr, updCr, delCr, addCaisseMvt, delV, selC, setSelC, selV, setSelV, tab, setTab, mdl, setMdl, flash, isDesktop };
 
   if (loading) return (
     <div style={{ minHeight: "100vh", background: "#12100c", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", fontFamily: "'DM Sans',sans-serif", color: "#d4af69" }}>

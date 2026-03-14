@@ -52,20 +52,196 @@ function MEditC({ctx,cl}){const c=ctx.gc(ctx.mdl.cid);if(!c)return null;const is
 function MPres({ctx,cl}){
   const cr=ctx.crs.find(z=>z.id===ctx.mdl.crid);if(!cr)return null;
   const[date,setDate]=useState(td());
-  // Compute initial state based on selected date
-  const computeState=(dt)=>{const s={};cr.cavs.forEach(id=>{const pr=ctx.prs.find(p=>p.cr===cr.id&&p.date===dt&&p.cav===id);s[id]=pr?.ok||false;});return s;};
-  const[local,setLocal]=useState(()=>computeState(date));
+  const[addMode,setAddMode]=useState(false);
+  const[addQ,setAddQ]=useState("");
+  const[forfaitPicker,setForfaitPicker]=useState(null); // {cavId, statut}
   const[saving,setSaving]=useState(false);
-  // When date changes, reload checkboxes
-  const changeDate=(dt)=>{setDate(dt);setLocal(computeState(dt));};
-  const toggle=(id)=>setLocal(prev=>({...prev,[id]:!prev[id]}));
-  const save=async()=>{setSaving(true);try{for(const id of cr.cavs){const wasOk=ctx.prs.find(p=>p.cr===cr.id&&p.date===date&&p.cav===id)?.ok||false;if(local[id]!==wasOk){await ctx.togPr(cr.id,date,id);}}cl();}catch(e){setSaving(false);}};
-  return<><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}><h3 style={{...MS.tt,margin:0}}>Présences — {cr.nom}</h3><button onClick={()=>ctx.setMdl({t:"ecr",crid:cr.id})} style={MS.iBtn} className="bh"><Ico n="edit" s={16} c="#d4af69"/></button></div>
+
+  // Get all cavaliers for this session on this date
+  // Start with template cavaliers, add any extras from presences
+  const templateCavs = cr.cavs || [];
+  const existingPrs = ctx.prs.filter(p=>p.cr===cr.id&&p.date===date);
+  const extraCavIds = existingPrs.map(p=>p.cav).filter(id=>!templateCavs.includes(id));
+  const allCavIds = [...templateCavs, ...extraCavIds];
+
+  // Local state: cavId -> { statut, forfaitId }
+  const buildState = () => {
+    const s = {};
+    for (const id of allCavIds) {
+      const pr = existingPrs.find(p=>p.cav===id);
+      s[id] = {
+        statut: pr?.statut || null,
+        forfaitId: pr?.forfaitId || null,
+        presenceId: pr?.id || null,
+      };
+    }
+    return s;
+  };
+  const[local,setLocal]=useState(()=>buildState());
+
+  const changeDate=(dt)=>{setDate(dt);
+    // Rebuild state for new date
+    const newPrs = ctx.prs.filter(p=>p.cr===cr.id&&p.date===dt);
+    const newExtras = newPrs.map(p=>p.cav).filter(id=>!templateCavs.includes(id));
+    const s = {};
+    for (const id of [...templateCavs, ...newExtras]) {
+      const pr = newPrs.find(p=>p.cav===id);
+      s[id] = { statut: pr?.statut || null, forfaitId: pr?.forfaitId || null, presenceId: pr?.id || null };
+    }
+    setLocal(s);
+  };
+
+  // Handle statut selection for a cavalier
+  const handleStatut = (cavId, statut) => {
+    if (statut === "Annulé") {
+      // No forfait needed
+      setLocal(prev=>({...prev,[cavId]:{...prev[cavId], statut, forfaitId: null}}));
+    } else {
+      // Check forfaits
+      const forfaits = ctx.getActiveForfaits(cavId);
+      if (forfaits.length === 0) {
+        // No forfait — set anyway (hors forfait)
+        setLocal(prev=>({...prev,[cavId]:{...prev[cavId], statut, forfaitId: null}}));
+      } else if (forfaits.length === 1) {
+        // Auto select the only forfait
+        setLocal(prev=>({...prev,[cavId]:{...prev[cavId], statut, forfaitId: forfaits[0].id}}));
+      } else {
+        // Multiple — show picker
+        setForfaitPicker({cavId, statut});
+      }
+    }
+  };
+
+  const selectForfait = (forfaitId) => {
+    if (!forfaitPicker) return;
+    setLocal(prev=>({...prev,[forfaitPicker.cavId]:{...prev[forfaitPicker.cavId], statut: forfaitPicker.statut, forfaitId}}));
+    setForfaitPicker(null);
+  };
+
+  // Add cavalier
+  const addCavalier = (cavId) => {
+    setLocal(prev=>({...prev,[cavId]:{ statut: null, forfaitId: null, presenceId: null }}));
+    setAddMode(false);
+    setAddQ("");
+  };
+
+  // Remove cavalier
+  const removeCavalier = (cavId) => {
+    setLocal(prev => {
+      const n = {...prev};
+      delete n[cavId];
+      return n;
+    });
+  };
+
+  // Save all
+  const save = async () => {
+    setSaving(true);
+    try {
+      for (const [cavId, state] of Object.entries(local)) {
+        if (!state.statut) continue; // Not pointed yet, skip
+        await ctx.setPresence(cr.id, date, cavId, state.statut, state.forfaitId);
+      }
+      cl();
+    } catch(e) { setSaving(false); ctx.flash("Erreur: " + e.message, "err"); }
+  };
+
+  const cavIds = Object.keys(local);
+  const searchRes = addQ.length>=2 ? ctx.cls.filter(c=>{
+    if (cavIds.includes(c.id)) return false;
+    const w=addQ.toLowerCase().split(/\s+/);
+    return w.every(z=>`${c.prenom} ${c.nom}`.toLowerCase().includes(z));
+  }).slice(0,6) : [];
+
+  const STATUTS = [
+    { key: "Présent", label: "Présent", icon: "✓", color: "#5ae8a0", bg: "rgba(90,232,160,.15)" },
+    { key: "Absent débité", label: "Absent", icon: "✗", color: "#e8c44a", bg: "rgba(232,196,74,.15)" },
+    { key: "Annulé", label: "Annulé", icon: "−", color: "#e87a7a", bg: "rgba(232,122,122,.15)" },
+  ];
+
+  // Forfait picker overlay
+  if (forfaitPicker) {
+    const forfaits = ctx.getActiveForfaits(forfaitPicker.cavId);
+    const c = ctx.gc(forfaitPicker.cavId);
+    return <>
+      <h3 style={{...MS.tt,margin:"0 0 8px"}}>Quel forfait débiter ?</h3>
+      <p style={{color:"#7a6f60",fontSize:13,marginBottom:14}}>{c?.prenom} {c?.nom}</p>
+      {forfaits.map(f=><button key={f.id} onClick={()=>selectForfait(f.id)} style={{...MS.lRow,padding:"14px 10px",borderRadius:10,marginBottom:6,background:"rgba(212,175,105,.04)",border:"1px solid rgba(212,175,105,.1)"}} className="bh rh">
+        <div style={{flex:1}}>
+          <div style={{fontWeight:600,color:"#e8dcc8",fontSize:13}}>{f.nom}</div>
+          <div style={{color:"#7a6f60",fontSize:11,marginTop:2}}>{f.heuresRestantes}h restantes sur {f.heuresTotal}h</div>
+        </div>
+        <div style={{background:"rgba(90,232,160,.15)",color:"#5ae8a0",borderRadius:8,padding:"4px 10px",fontSize:12,fontWeight:700}}>{f.heuresRestantes}h</div>
+      </button>)}
+      <button onClick={()=>{
+        // Allow "hors forfait"
+        setLocal(prev=>({...prev,[forfaitPicker.cavId]:{...prev[forfaitPicker.cavId], statut: forfaitPicker.statut, forfaitId: null}}));
+        setForfaitPicker(null);
+      }} style={{...MS.lRow,padding:"12px 10px",color:"#7a6f60",fontSize:13,justifyContent:"center"}} className="bh rh">Hors forfait (pas de débit)</button>
+      <button onClick={()=>setForfaitPicker(null)} style={{width:"100%",marginTop:8,...MS.dBtn,background:"rgba(212,175,105,.08)",color:"#7a6f60"}} className="bh">Retour</button>
+    </>;
+  }
+
+  return<>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+      <h3 style={{...MS.tt,margin:0}}>Présences — {cr.nom}</h3>
+      <button onClick={()=>ctx.setMdl({t:"ecr",crid:cr.id})} style={MS.iBtn} className="bh"><Ico n="edit" s={16} c="#d4af69"/></button>
+    </div>
     <p style={{color:"#7a6f60",fontSize:13,marginBottom:6}}>{cr.jour} {cr.heure}</p>
     <Fld l="Date du cours" t="date" v={date} o={changeDate}/>
-    {cr.cavs.length===0&&<p style={{color:"#5a5040",fontSize:13,padding:10}}>Aucun cavalier — modifier le créneau pour en ajouter</p>}
-    {cr.cavs.map(id=>{const c=ctx.gc(id);if(!c)return null;const ok=local[id]||false;return<button key={id} onClick={()=>toggle(id)} style={{...MS.lRow,padding:"12px 8px"}} className="bh rh"><div style={{width:24,height:24,borderRadius:6,border:`2px solid ${ok?"#5ae8a0":"#7a6f60"}`,background:ok?"#5ae8a0":"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{ok&&<Ico n="chk" s={14} c="#1a1207"/>}</div><span style={{color:"#e8dcc8",fontSize:14,flex:1}}>{c.prenom} {c.nom}</span><span style={{color:ok?"#5ae8a0":"#7a6f60",fontSize:12}}>{ok?"Présent":"Absent"}</span></button>})}
-    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:16}}><button onClick={cl} style={{...MS.dBtn,background:"rgba(212,175,105,.08)",color:"#7a6f60"}} className="bh">Annuler</button><button onClick={save} disabled={saving} style={{...MS.pBtn,opacity:saving?.5:1}} className="bh">{saving?"Enregistrement...":"Enregistrer"}</button></div></>;
+
+    {/* Cavalier list */}
+    {cavIds.length===0&&<p style={{color:"#5a5040",fontSize:13,padding:10}}>Aucun cavalier — modifier le créneau pour en ajouter</p>}
+    {cavIds.map(id=>{
+      const c=ctx.gc(id);if(!c)return null;
+      const state=local[id]||{};
+      const forfaits=ctx.getActiveForfaits(id);
+      const forfaitInfo = state.forfaitId ? forfaits.find(f=>f.id===state.forfaitId) || ctx.vts.find(v=>v.id===state.forfaitId) : null;
+
+      return<div key={id} style={{borderBottom:"1px solid rgba(212,175,105,.06)",padding:"12px 0"}}>
+        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+          <span style={{color:"#e8dcc8",fontSize:14,flex:1,fontWeight:600}}>{c.prenom} {c.nom}</span>
+          {!templateCavs.includes(id)&&<button onClick={()=>removeCavalier(id)} style={{background:"none",border:"none",cursor:"pointer",padding:4}} className="bh"><Ico n="x" s={14} c="#e87a7a"/></button>}
+          {forfaits.length>0&&<span style={{color:"#7a6f60",fontSize:10}}>{forfaits.reduce((s,f)=>s+f.heuresRestantes,0)}h dispo</span>}
+        </div>
+        <div style={{display:"flex",gap:6}}>
+          {STATUTS.map(s=>{
+            const active = state.statut===s.key;
+            return<button key={s.key} onClick={()=>handleStatut(id,s.key)} style={{
+              flex:1,padding:"8px 4px",borderRadius:8,border:`1px solid ${active?s.color:"rgba(212,175,105,.1)"}`,
+              background:active?s.bg:"transparent",cursor:"pointer",fontFamily:"inherit",
+              display:"flex",alignItems:"center",justifyContent:"center",gap:4,
+              color:active?s.color:"#7a6f60",fontSize:12,fontWeight:active?700:500,
+            }} className="bh">
+              <span style={{fontSize:14}}>{s.icon}</span>{s.label}
+            </button>
+          })}
+        </div>
+        {state.forfaitId && forfaitInfo && <div style={{marginTop:6,fontSize:11,color:"#7db8e0",background:"rgba(125,184,224,.1)",borderRadius:6,padding:"4px 8px"}}>
+          → {forfaitInfo.nom || forfaitInfo.detail} ({forfaitInfo.heuresRestantes !== undefined ? `${forfaitInfo.heuresRestantes}h rest.` : ""})
+        </div>}
+        {(state.statut==="Présent"||state.statut==="Absent débité")&&!state.forfaitId&&forfaits.length>0&&
+          <div style={{marginTop:6,fontSize:11,color:"#e8c44a",background:"rgba(232,196,74,.1)",borderRadius:6,padding:"4px 8px"}}>⚠ Hors forfait</div>
+        }
+        {(state.statut==="Présent"||state.statut==="Absent débité")&&forfaits.length===0&&
+          <div style={{marginTop:6,fontSize:11,color:"#e87a7a",background:"rgba(232,122,122,.1)",borderRadius:6,padding:"4px 8px"}}>Aucun forfait actif</div>
+        }
+      </div>
+    })}
+
+    {/* Add cavalier */}
+    {!addMode?<button onClick={()=>setAddMode(true)} style={{display:"flex",alignItems:"center",gap:8,padding:"12px 0",color:"#d4af69",background:"none",border:"none",cursor:"pointer",fontSize:13,fontFamily:"inherit",width:"100%"}} className="bh"><Ico n="plus" s={16} c="#d4af69"/> Ajouter un cavalier</button>
+    :<div style={{padding:"8px 0"}}>
+      <div style={{...MS.srchW,marginBottom:6}}><Ico n="srch" s={14} c="#7a6f60"/><input placeholder="Rechercher..." value={addQ} onChange={e=>setAddQ(e.target.value)} style={MS.srchI} autoFocus/><button onClick={()=>{setAddMode(false);setAddQ("");}} style={{background:"none",border:"none",cursor:"pointer",padding:4}}><Ico n="x" s={14} c="#7a6f60"/></button></div>
+      {searchRes.map(c=><button key={c.id} onClick={()=>addCavalier(c.id)} style={{...MS.lRow,padding:"8px"}} className="bh rh"><span style={{color:"#e8dcc8",fontSize:13}}>{c.prenom} {c.nom}</span><Ico n="plus" s={14} c="#5ae8a0"/></button>)}
+    </div>}
+
+    {/* Save */}
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:16}}>
+      <button onClick={cl} style={{...MS.dBtn,background:"rgba(212,175,105,.08)",color:"#7a6f60"}} className="bh">Annuler</button>
+      <button onClick={save} disabled={saving} style={{...MS.pBtn,opacity:saving?.5:1}} className="bh">{saving?"Enregistrement...":"Enregistrer"}</button>
+    </div>
+  </>;
 }
 
 function MDebitH({ctx,cl}){const cid=ctx.mdl.cid;const c=ctx.gc(cid);const hrs=ctx.ch(cid);const[delta,setDelta]=useState(-1);const[motif,setMotif]=useState("");const[date,setDate]=useState(td());return<><h3 style={MS.tt}>Ajuster les heures</h3><p style={{color:"#7a6f60",fontSize:13,marginBottom:12}}>{c?.prenom} {c?.nom} · Solde : <b style={{color:"#7db8e0"}}>{hrs.solde}h</b></p><div style={{marginBottom:16}}><div style={{display:"flex",alignItems:"center",gap:12,justifyContent:"center"}}><button onClick={()=>setDelta(d=>d-1)} style={{width:48,height:48,borderRadius:12,background:"rgba(232,122,122,.15)",border:"none",color:"#e87a7a",fontSize:24,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}} className="bh">−</button><div style={{minWidth:80,textAlign:"center"}}><span style={{fontSize:32,fontWeight:700,color:delta>0?"#5ae8a0":delta<0?"#e87a7a":"#e8dcc8"}}>{delta>0?"+":""}{delta}</span><span style={{color:"#7a6f60",fontSize:14,marginLeft:4}}>h</span></div><button onClick={()=>setDelta(d=>d+1)} style={{width:48,height:48,borderRadius:12,background:"rgba(90,232,160,.15)",border:"none",color:"#5ae8a0",fontSize:24,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}} className="bh">+</button></div></div><Fld l="Date" t="date" v={date} o={setDate}/><Fld l="Motif" v={motif} o={setMotif} ph="Ex: Cours annulé, ajustement..."/><button onClick={()=>{if(delta===0)return;ctx.addHM(cid,delta,motif||"Ajustement",date);cl();}} disabled={delta===0} style={{...MS.pBtn,width:"100%",opacity:delta===0?.4:1}} className="bh">{delta>0?`Ajouter ${delta}h`:`Retirer ${Math.abs(delta)}h`}</button></>;
