@@ -8,7 +8,7 @@ module.exports = async function handler(req, res) {
       const data = await queryAll(DB.CLIENTS);
       const clients = data.map(p => ({
         id: p.id,
-        nom: prop(p, "NoM") || prop(p, "Nom") || "",
+        nom: prop(p, "Nom") || "",
         prenom: prop(p, "Prénom") || "",
         type: prop(p, "Type") || "Parent",
         email: prop(p, "Adresse mail") || "",
@@ -27,8 +27,8 @@ module.exports = async function handler(req, res) {
       const d = req.body;
       const displayName = `${d.prenom || ""} ${d.nom || ""}`.trim();
       const properties = {
-        "Nom": { title: [{ text: { content: displayName } }] },
-        "NoM": { rich_text: [{ text: { content: d.nom || "" } }] },
+        "Nom complet": { title: [{ text: { content: displayName } }] },
+        "Nom": { rich_text: [{ text: { content: d.nom || "" } }] },
         "Prénom": { rich_text: [{ text: { content: d.prenom || "" } }] },
         "Type": { select: { name: d.type || "Enfant" } },
       };
@@ -47,14 +47,14 @@ module.exports = async function handler(req, res) {
       const { id, ...d } = req.body;
       if (!id) return res.status(400).json({ error: "id required" });
       const properties = {};
-      if (d.nom !== undefined) properties["NoM"] = { rich_text: [{ text: { content: d.nom } }] };
+      if (d.nom !== undefined) properties["Nom"] = { rich_text: [{ text: { content: d.nom } }] };
       if (d.prenom !== undefined) properties["Prénom"] = { rich_text: [{ text: { content: d.prenom } }] };
       // Update display title if nom or prenom changed
       if (d.nom !== undefined || d.prenom !== undefined) {
         const newNom = d.nom !== undefined ? d.nom : "";
         const newPrenom = d.prenom !== undefined ? d.prenom : "";
         const displayName = `${newPrenom} ${newNom}`.trim();
-        if (displayName) properties["Nom"] = { title: [{ text: { content: displayName } }] };
+        if (displayName) properties["Nom complet"] = { title: [{ text: { content: displayName } }] };
       }
       if (d.email !== undefined) properties["Adresse mail"] = { email: d.email || null };
       if (d.tel !== undefined) properties["Téléphone"] = { rich_text: [{ text: { content: d.tel || "" } }] };
