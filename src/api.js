@@ -38,6 +38,11 @@ export const getHeures = () => call("/heures");
 export const addHeures = (data) => call("/heures", "POST", data);
 export const getCaisse = () => call("/caisse");
 export const addCaisseMvt = (data) => call("/caisse", "POST", data);
+export const getFactures = () => call("/factures");
+export const createFacture = (data) => call("/factures", "POST", data);
+export const getAvoirs = () => call("/avoirs");
+export const createAvoir = (data) => call("/avoirs", "POST", data);
+export const updateAvoir = (id, data) => call("/avoirs", "PATCH", { id, ...data });
 
 // Load all - each call independent, failures return empty arrays
 export async function loadAll() {

@@ -31,6 +31,10 @@ module.exports = async function handler(req, res) {
           id: p.id, ref: prop(p, "Référence") || "", cav: (prop(p, "Cavalier") || [])[0] || null,
           pay: (prop(p, "Client payeur") || [])[0] || null, prest: (prop(p, "Prestations") || [])[0] || null,
           detail: prop(p, "Détail") || "", mt, rem, du, tp, st, date: prop(p, "Date") || "", pays, fact: false,
+          hRest: prop(p, "Heures restantes"),
+          renouv: prop(p, "Renouvellement auto") || false,
+          freqRenouv: prop(p, "Fréquence renouvellement") || null,
+          prochEch: prop(p, "Prochaine échéance") || null,
         };
       });
       return res.status(200).json(ventes);

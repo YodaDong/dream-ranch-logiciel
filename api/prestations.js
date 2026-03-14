@@ -13,6 +13,8 @@ module.exports = async function handler(req, res) {
       prix: prop(p, "Prix TTC") || 0,
       tva: prop(p, "TVA %") || 0,
       h: prop(p, "heure") || 0,
+      impH: prop(p, "Impacte les heures") || false,
+      needP: prop(p, "Nécessite une personne") || false,
       actif: true,
     }));
     return res.status(200).json(prestations);

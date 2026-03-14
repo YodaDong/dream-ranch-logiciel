@@ -7,6 +7,7 @@ const DB = {
   VENTES:           "31bdae11-828a-8029-a6da-ebcae1780a06",
   PAIEMENTS:        "31bdae11-828a-802e-8a3f-d2ae894e2f22",
   FACTURES:         "31bdae11-828a-801e-9f94-c3849530d1ae",
+  AVOIRS:           "323dae11-828a-808c-b296-c9baef02feab",
   PLANNING:         "31edae11-828a-80cb-8c90-e962093b1957",
   PRESENCES:        "31edae11-828a-80ea-81c9-f622e3e3900c",
   HEURES_MANUELLES: "31edae11-828a-80b2-a4f4-fc8650bd3977",
